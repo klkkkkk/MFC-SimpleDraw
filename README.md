@@ -122,3 +122,341 @@ case Shape::Line:
 ```
 至此直线功能完成。
 #### 矩形
+为 __矩形__ 选项添加事件处理程序，当我们点击该选项时，将 ``CSimpleDrawView``类中的 ``m_Shape``成员更改为 ``Shape::Rectangle``。<br />
+画矩形需要用到dc的 ``Rectangle``函数，它有多个重载，此处使用的是将一个已经确定的矩形绘画在相应的位置。此处定义的矩形为 ``CRect rectP(BeginPoint, EndPoint)`` ，它代表以 ``BeginPoint``为左上角， ``EndPoint``为右下角的一个矩形。使用与画直线时相同的策略，即可实现画矩形：
+```
+case Shape::Rectangle: {
+	dc.SetROP2(R2_NOTXORPEN);//画笔颜色与屏幕像素值的异或再反色，达到画笔移动的效果
+	dc.SelectStockObject(PS_NULL);
+	CRect rectP(BeginPoint, EndPoint);
+	dc.Rectangle(rectP);
+	CRect rectP2(BeginPoint, point);
+	dc.Rectangle(rectP2);
+	EndPoint = point;
+	break;
+}
+```
+注意实际操作时会发现一个问题：新画的矩形会盖住先前的图案，所以为解决此问题，在上面代码中增加一行： ``dc.SelectStockObject(PS_NULL)``，将图案设置为透明即可。<br />
+同样地，最后要在 ``OnLButtonUp``中重新绘画重合的部分：
+```
+case Shape::Rectangle: {
+	dc.SelectStockObject(PS_NULL);
+	CRect rectP2(BeginPoint, point);
+	dc.Rectangle(rectP2);
+	break;
+}
+```
+至此矩形功能完成。
+#### 正方形
+为 __正方形__ 选项添加事件处理程序，当我们点击该选项时，将 ``CSimpleDrawView``类中的 ``m_Shape``成员更改为 ``Shape::Square``。<br />
+正方形的画法由矩形改编而来。它的终止点不再由鼠标的当前横纵坐标确定而只由鼠标当前的纵坐标决定，因为正方形的长和宽相等，故只需用起始点和终止点之间纵坐标的差距就可同时确定长和宽。代码如下：
+```
+case Shape::Square: {
+	dc.SetROP2(R2_NOTXORPEN);//画笔颜色与屏幕像素值的异或再反色，达到画笔移动的效果
+	dc.SelectStockObject(PS_NULL);
+	int len1 = EndPoint.y - BeginPoint.y;
+	if (EndPoint.x < BeginPoint.x) {//终点在起点左边
+		EndPoint.x = BeginPoint.x - abs(len1);
+	}
+	else {//终点在起点右边
+		EndPoint.x = BeginPoint.x + abs(len1);
+	}
+	CRect rectP(BeginPoint, EndPoint);
+	dc.Rectangle(rectP);
+	int len2 = point.y - BeginPoint.y;
+	if (point.x < BeginPoint.x) {//终点在起点左边
+		EndPoint.x = BeginPoint.x - abs(len2);
+	}
+	else {//终点在起点右边
+		EndPoint.x = BeginPoint.x + abs(len2);
+	}
+	EndPoint.y = point.y;
+	CRect rectP2(BeginPoint, EndPoint);
+	dc.Rectangle(rectP2);
+	EndPoint = point;
+	break;
+}
+```
+此处为了能向任意方向绘制正方形，增加了一个判断条件。抬起鼠标后，仍像之前那样重绘重合部分，这里不再赘述。至此正方形功能完成。
+#### 椭圆
+为 __椭圆__ 选项添加事件处理程序，当我们点击该选项时，将 ``CSimpleDrawView``类中的 ``m_Shape``成员更改为 ``Shape::Ellipse``。<br />
+椭圆可用dc自带的 ``Ellipse``函数直接绘画。它的定义是一个矩形的内接椭圆，所以只需像画矩形那样先定义一个矩形，再将该矩形作为参数传入 ``Ellipse``即可。代码如下：
+```
+case Shape::Ellipse: {
+	dc.SetROP2(R2_NOTXORPEN);//画笔颜色与屏幕像素值的异或再反色，达到画笔移动的效果
+	dc.SelectStockObject(PS_NULL);
+	CRect rectP(BeginPoint, EndPoint);
+	dc.Ellipse(rectP);
+	CRect rectP2(BeginPoint, point);
+	dc.Ellipse(rectP2);
+	EndPoint = point;
+	break;
+}
+```
+重合部分的处理不再赘述。至此椭圆功能完成。
+#### 圆形
+为 __圆形__ 选项添加事件处理程序，当我们点击该选项时，将 ``CSimpleDrawView``类中的 ``m_Shape``成员更改为 ``Shape::Circle``。<br />
+圆形既可以看作是椭圆的特殊情况处理，也可参照正方形的情况处理。此处圆形的定义就是一个正方形的内接圆，所以在正方形的基础上，只需将绘画时用的 ``Rectangle``函数更改为 ``Ellipse``函数即可画出圆形。代码如下：
+```
+case Shape::Circle: {
+	dc.SetROP2(R2_NOTXORPEN);//画笔颜色与屏幕像素值的异或再反色，达到画笔移动的效果
+	dc.SelectStockObject(PS_NULL);
+	int len1 = EndPoint.y - BeginPoint.y;
+	if (EndPoint.x < BeginPoint.x) {//终点在起点左边
+		EndPoint.x = BeginPoint.x - abs(len1);
+	}
+	else {//终点在起点右边
+		EndPoint.x = BeginPoint.x + abs(len1);
+	}
+	CRect rectP(BeginPoint, EndPoint);
+	dc.Ellipse(rectP);
+
+	int len2 = point.y - BeginPoint.y;
+	if (point.x < BeginPoint.x) {//终点在起点左边
+		EndPoint.x = BeginPoint.x - abs(len2);
+	}
+	else {//终点在起点右边
+		EndPoint.x = BeginPoint.x + abs(len2);
+	}
+	EndPoint.y = point.y;
+	CRect rectP2(BeginPoint, EndPoint);
+	dc.Ellipse(rectP2);
+	EndPoint = point;
+	break;
+}
+```
+重合部分的处理不再赘述。至此圆形功能完成。
+#### 多边形
+多边形包含三种图案：三角形、五边形、六边形（正方形和矩形已单独列出，故不在此范围内），每种图案有各自的画法，具体如下：<br />
+首先为 __三角形__ 选项添加事件处理程序，当我们点击该选项时，将 ``CSimpleDrawView``类中的 ``m_Shape``成员更改为 ``Shape::Triangle``。<br />
+绘画三角形的思路是，以鼠标左键按下的点为起点，鼠标的当前位置为终点。三角形的第一个顶点就是起点，第二个顶点定义如下：其横坐标为起点横坐标 __加上__ 终点与起点的横坐标之差的绝对值，纵坐标为终点的纵坐标。第三个顶点定义如下：其横坐标为起点横坐标 __减去__ 终点与起点的横坐标之差的绝对值，纵坐标为终点的纵坐标。因此由定义可以看出，本系统只能画出等腰的三角形。通过dc中的 ``Polygon``函数将已定义的几个点顺次连接，就得到了三角形，代码如下：
+```
+case Shape::Triangle: {
+	dc.SetROP2(R2_NOTXORPEN);//画笔颜色与屏幕像素值的异或再反色，达到画笔移动的效果
+	dc.SelectStockObject(PS_NULL);
+	int lenx = abs(EndPoint.x - BeginPoint.x);
+	int leny = EndPoint.y - BeginPoint.y;
+	CPoint pt[3] = { CPoint(BeginPoint.x,BeginPoint.y),
+				    CPoint(BeginPoint.x + lenx,BeginPoint.y + leny),
+					CPoint(BeginPoint.x - lenx,BeginPoint.y + leny) };
+	dc.Polygon(pt,3);
+
+	int lenx2 = abs(point.x - BeginPoint.x);
+	int leny2 = point.y - BeginPoint.y;
+	pt[0] = CPoint(BeginPoint.x, BeginPoint.y);
+	pt[1] = CPoint(BeginPoint.x + lenx2, BeginPoint.y + leny2);
+	pt[2] = CPoint(BeginPoint.x - lenx2, BeginPoint.y + leny2);
+	dc.Polygon(pt, 3);
+	EndPoint = point;
+	break;
+}
+```
+重合部分的处理不再赘述。至此三角形功能完成。
+
+至于五边形，首先为 __五边形__ 选项添加事件处理程序，当我们点击该选项时，将 ``CSimpleDrawView``类中的 ``m_Shape``成员更改为 ``Shape::Pentagon``。<br />
+五边形的第一个顶点仍以起点作为定义。然后将其余四个点划分为两组，第一组的两个点横坐标为起点的横坐标加上/减去终点横坐标与起点横坐标差的绝对值，纵坐标为终点的纵坐标。另一组的两个点为起点的横坐标加上/减去终点横坐标与起点横坐标差的绝对值的一定倍数，这个倍数模糊估计为1+1/1.6（是一个 _magic number_）。纵坐标为起点的纵坐标加上终点纵坐标与起点纵坐标差的绝对值的一定倍数，这个倍数模糊估计为1/2.6（是一个 _magic number_）。同样使用 ``Polygon``将已定义的五个点顺次连接，就得到了五边形，代码较长，详见源代码。重合部分的处理不再赘述。至此五边形功能完成。
+
+至于六边形，首先为 __六边形__ 选项添加事件处理程序，当我们点击该选项时，将 ``CSimpleDrawView``类中的 ``m_Shape``成员更改为 ``Shape::Hexagon``。<br />
+六边形的第一个顶点以起点作为定义，第二个顶点的横坐标与起点横坐标相同，纵坐标与终点纵坐标相同。然后将其余四个点划分为两组，第一组的两个点横坐标为起点的横坐标加上/减去终点横坐标与起点横坐标差的绝对值，纵坐标为起点的纵坐标 __加上__ 终点纵坐标与起点纵坐标差的绝对值的一定倍数，这个倍数模糊估计为1/4。另一组的两个点横坐标则与第一组两个点相同，但纵坐标为另一倍数，这个倍数模糊估计为3/4。这样，再使用 ``Polygon``将已定义的六个点顺次连接，就得到了六边形，代码较长，详见源代码。重合部分的处理不再赘述。至此六边形功能完成。
+
+### 文本框
+为 __文本框__ 选项添加事件处理程序，当我们点击该选项时，将 ``CSimpleDrawView``类中的 ``m_Shape``成员更改为 ``Shape::Text``。<br />
+我们调用项目中自带的 ``CEdit``类完成文本框的绘制。当鼠标左键按下时用 ``Text_Pos``记录文本框位置。鼠标移动时，创建一个 ``CEdit``指针 ``CEdit* m_edit = new CEdit()``，通过 ``Create(WS_CHILD | WS_VISIBLE | WS_BORDER, CRect(BeginPoint, point), this, Textid)``函数创建一个文本框，四个参数分别为文本框风格，文本框大小（从鼠标左键按下的起始点到鼠标当前坐标点），当前工作窗口，文本框编号（任意数字，初始化为100）。再使用 ``ShowWindow(SW_SHOW)``将其显示在屏幕上即可。属于 ``CSimpleDrawView``类的 ``m_Edit``时刻指向当前文本框，故每次更新 ``m_Edit``时都应先将其原本指向的对象释放，以免内存泄漏。屏幕上始终只会显示一个文本框，故不需要做额外处理。鼠标抬起后，再次重绘一遍当前文本框，就可将文本框长时间显示在屏幕上。<br />
+接下来我们便可在文本框中输入一些文字，只要按下回车，就能将这些文字显示在屏幕上。为了实现该功能，我们必须借助类向导添加一个虚函数 ``PreTranslateMessage(MSG* pMsg)``，它负责响应我们的键盘消息。所以，我们将在该函数中添加代码，当我们按下回车键时即 ``(pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_RETURN)``，如果我们正在使用 ``Shape::Text``模式，就会用 ``GetWindowTextW``函数提取出文本框中的文字，然后将文本框释放，再用 ``TextOutW``仅将文字显示在屏幕上。注意当屏幕上存在文本框时如果我们切换到了其他绘画工具，根据习惯同样应该释放文本框，所以这时要进行和按下回车键一样的操作。具体代码如下：
+```
+//按下回车或从文本切换到了其他模式
+if ((m_Shape != Shape::Text || (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_RETURN && m_Shape == Shape::Text)) && m_Edit != nullptr) {
+	CString pStr;
+	m_Edit->GetWindowTextW(pStr);
+	delete m_Edit;
+	m_Edit = nullptr;
+	CClientDC dc(this);
+	dc.TextOutW(Text_Pos.x, Text_Pos.y, pStr);
+	return TRUE;
+}
+```
+至此文本框功能实现。
+### 铅笔与橡皮
+首先为 __铅笔__ 和 __橡皮__ 选项添加事件处理程序，当我们点击选项时，将 ``CSimpleDrawView``类中的 ``m_Shape``成员分别更改为 ``Shape::Pencil``和 ``Shape::Eraser``。<br />
+以铅笔为例，只需要让窗口实时跟踪我们鼠标的轨迹然后用某种颜色画出来即可。这和画直线十分相似，用 ``MoveTo``和 ``LineTo``即可实现，与直线不同的是，我们的起始点始终为鼠标上一时刻的坐标，这样就可实时跟踪轨迹。具体代码如下：
+```
+case Shape::Pencil: {
+	BeginPoint = EndPoint;//终点做新起点
+	EndPoint = point;
+	dc.MoveTo(BeginPoint);
+	dc.LineTo(EndPoint);
+	break;
+}
+```
+橡皮的操作与铅笔完全相同，只不过画笔颜色不一样，使用橡皮时强制将画笔颜色设置为背景色，这样鼠标经过之处均变为背景色，相当于擦除了原本的图案。橡皮的粗细用画笔的粗细代表。代码如下：
+```
+case Shape::Eraser: {
+	COLORREF pColor = dc.GetBkColor();
+	CPen newPen(PS_SOLID, Pen_Size, pColor);
+	dc.SelectObject(&newPen);
+
+	BeginPoint = EndPoint;//终点做新起点
+	EndPoint = point;
+	dc.MoveTo(BeginPoint);
+	dc.LineTo(EndPoint);
+
+	break;
+}
+```
+至此铅笔与橡皮功能实现。
+### 填充
+为 __填充__ 选项添加事件处理程序，当我们点击选项时，将 ``CSimpleDrawView``类中的 ``m_Shape``成员更改为 ``Shape::Fill``。<br />
+填充只需在鼠标按下的那一刻执行即可，所以相关代码将在 ``OnLButtonDown``中添加。当我们按下鼠标左键，如果是在 ``Shape::Fill``模式，就使用我们预先设定的填充颜色 ``Brush_Color``，然后利用 ``ExtFloodFill(BeginPoint.x, BeginPoint.y, RGB(255,255,255), FLOODFILLSURFACE)``函数进行填充。其中前两个参数代表我们鼠标按下的点。 ``FLOODFILLSURFACE``代表从按下的点开始，填充所有颜色为前一个参数的像素，直到碰到不是该颜色的像素为止。这样填充功能就完成了，代码如下：
+```
+if (m_Shape == Shape::Fill) {
+	CClientDC Dc(this);
+	CBrush cBr(Brush_Color);
+	Dc.SelectObject(&cBr);
+	Dc.ExtFloodFill(BeginPoint.x, BeginPoint.y, RGB(255,255,255), FLOODFILLSURFACE);
+}
+```
+### 选择
+选择功能的实现较为复杂。首先为 __选择区域__ 选项添加事件处理程序，当我们点击选项时，将 ``CSimpleDrawView``类中的 ``m_Shape``成员更改为 ``Shape::Choose``。以下功能均在该模式下执行。<br />
+#### 选择某一区域
+选择功能对于用户来说就是画出一个矩形框住一个范围，所以实现方法与画矩形相同。为避免与矩形混淆，我们用虚线画矩形，而且强制画笔粗细为最细，颜色为黑色。代码如下：
+```
+//该部分代码在OnMouseMove中
+if (!Chosen) {
+	CRect rectP(BeginPoint, EndPoint);
+	FastRect(rectP);
+	CRect rectP2(BeginPoint, point);
+	FastRect(rectP2);
+	EndPoint = point;
+}
+```
+此处用到了快速描绘选框矩形的一个函数 ``FastRect``，详见源代码。
+当我们抬起鼠标左键的一刻即代表选择完毕，此时置一个 ``bool``变量 ``Chosen``（在 ``CSimpleDrawView``类中定义）为 ``True``。这意味着我们已经选择了一个区域，可以进行接下来的几个操作。此时如果再次点击区域以外的位置，将会重新选择区域。代码如下：
+```
+//该部分代码在LButtonDown中
+if (Chosen) {
+	CRect area(Chooselt, Choosebr);
+	if (!area.PtInRect(point))
+	{
+		/*要进行的操作*/
+		Chosen = false;
+		ClearRect(area);
+	}
+}
+```
+``ClearRect``是快速清除选框的函数，详见源代码。此外，如果此时切换到其他绘画模式，选框也会立即清除，在 ``PreTranslateMessage``中执行。
+
+#### 拖动某一区域
+为了实现拖动功能，选择完区域的同时，我们需要对当前画面做一些处理。由于接下来拖动该区域后，这片区域将变为空白，为实现这个效果，我们需要用到其他两个dc（须事先在``CSimpleDrawView``类中定义）: ``HDC bc_hdc``保存当前图像。然后将该选框内图像填为空白，再用 ``HDC ac_hdc``保存此时图像。这样拖动选区时，先重绘 ``ac_hdc``中的图像到工作区，再重绘 ``bc_hdc``中选区的那一块图像到工作区，就实现了拖动功能。当然，这时还应记录下选区的坐标（左上角和右下角）以及初始化有关拖动的工作变量以便后续处理。代码如下：
+```
+//该部分代码在LButtonUp中
+case Shape::Choose: {
+	if (!Chosen) {
+		CRect rectP2(BeginPoint, point);
+		ClearRect(rectP2);
+		CRect rect;
+		GetClientRect(&rect);
+		HBITMAP hbitmap = CreateCompatibleBitmap(dc, rect.right - rect.left, rect.bottom - rect.top);//创建兼容位图
+		bc_hdc = CreateCompatibleDC(dc);      //创建兼容DC，以便将图像保存为不同的格式
+		SelectObject(bc_hdc, hbitmap);//将位图选入DC，并保存返回值 
+		BitBlt(bc_hdc, 0, 0, rect.right - rect.left, rect.bottom - rect.top, dc, 0, 0, SRCCOPY);//将屏幕DC图像复制到内存DC
+		CBrush cBr(RGB(255,255,255));
+		dc.FillRect(rectP2, &cBr);
+		hbitmap = CreateCompatibleBitmap(dc, rect.right - rect.left, rect.bottom - rect.top);//创建兼容位图
+		ac_hdc = CreateCompatibleDC(dc);
+		SelectObject(ac_hdc, hbitmap);
+		BitBlt(ac_hdc, 0, 0, rect.right - rect.left, rect.bottom - rect.top, dc, 0, 0, SRCCOPY);
+		StretchBlt(dc,BeginPoint.x, BeginPoint.y, rectP2.Width(), rectP2.Height(),
+		bc_hdc, BeginPoint.x, BeginPoint.y, rectP2.Width(), rectP2.Height(), SRCCOPY);
+		FastRect(rectP2, false);
+		EndPoint = point;
+		Chosen = true;
+		Chooselt = BeginPoint;
+		Choosebr = point;
+		Startlt = Chooselt;
+		Startbr = Choosebr;
+		Tempclt = Chooselt;
+		Tempcbr = Choosebr;
+        }
+}
+```
+其中 ``CPoint Chooselt, Choosebr, Tempclt, Tempcbr, Startlt, Startbr``需要事先定义在 ``CSimpleDrawView``类中，它们记录选框的左上角坐标（lt）和右下角坐标（br）。<br />
+上面是在我们首次选择某区域后抬起左键执行的操作。此后再次点击鼠标左键，如果落点在区域内，我们就可以按住鼠标拖动该区域（否则就是重新选区）。 ``Chooselt``和 ``Choosebr``为选框静止的位置， ``Tempclt``和 ``Tempcbr``为选框移动过程中实时的位置。松开鼠标左键时，更新选框静止位置。代码如下：
+```
+//该部分代码在OnMouseMove中
+CRect area(Tempclt, Tempcbr);
+ClearRect(area);
+CRect rect;
+GetClientRect(&rect);
+StretchBlt(dc, 0, 0, rect.Width(), rect.Height(),
+		  ac_hdc, 0, 0, rect.Width(), rect.Height(), SRCCOPY);
+int lenx = point.x - BeginPoint.x;
+int leny = point.y - BeginPoint.y;
+Tempclt = CPoint(Chooselt.x + lenx, Chooselt.y + leny);
+Tempcbr = CPoint(Choosebr.x + lenx, Choosebr.y + leny);
+CRect newarea(Tempclt, Tempcbr);
+StretchBlt(dc,Tempclt.x, Tempclt.y, newarea.Width(), newarea.Height(),bc_hdc, Startlt.x, Startlt.y, Startbr.x- Startlt.x, Startbr.y - Startlt.y, SRCCOPY);
+FastRect(newarea);
+```
+拖动功能实现。
+
+#### 缩放某一区域
+缩放功能是拖动功能的特殊情况，我们可以改变选区的大小。在拖动功能中，选区的左上角和右下角会随着鼠标移动。而在缩放功能中，固定左上角不动，只有右下角移动，就实现了选区大小的更改。此外 ``StretchBlt``函数也将自动将原选区的图像按比例画到新选区中，就实现了缩放功能。在操作上，本系统用按住鼠标右键移动的方式进行缩放。故还应对 ``OnRButtonDown``和 ``OnRButtonUp``函数添加一些必要代码。这里只列出缩放功能的代码：
+```
+//该部分代码在OnMouseMove中
+if (nFlags & MK_RBUTTON) {
+	CClientDC dc(this);
+	if (m_Shape == Shape::Choose && Chosen) {
+		CRect area(Tempclt, Tempcbr);
+		ClearRect(area);
+		CRect rect;
+		GetClientRect(&rect);
+		StretchBlt(dc, 0, 0, rect.Width(), rect.Height(),
+			ac_hdc, 0, 0, rect.Width(), rect.Height(), SRCCOPY);
+		int lenx = point.x - BeginPoint.x;
+		int leny = point.y - BeginPoint.y;
+		Tempcbr = CPoint(Choosebr.x + lenx, Choosebr.y + leny);
+		CRect newarea(Tempclt, Tempcbr);
+		StretchBlt(dc, Tempclt.x, Tempclt.y, newarea.Width(), newarea.Height(),
+		bc_hdc, Startlt.x, Startlt.y, Startbr.x - Startlt.x, Startbr.y - Startlt.y, SRCCOPY);
+		FastRect(newarea);
+	}
+}
+```
+#### 删除某一区域
+本系统采用按下退格键删除区域的方式。故该部分在 ``PreTranslateMessage``中执行。只需将 ``ac_hdc``中保存的图像重绘到工作区并取消选框即可，代码如下：
+```
+if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_BACK) {//按下退格
+	if (Chosen) {
+		CClientDC dc(this);
+		CRect rect;
+		GetClientRect(&rect);
+		StretchBlt(dc, 0, 0, rect.Width(), rect.Height(),
+				  ac_hdc, 0, 0, rect.Width(), rect.Height(), SRCCOPY);
+		Chosen = false;
+		return TRUE;
+	}
+}
+```
+### 撤销
+为 __撤销__ 选项添加事件处理程序。在 ``CSimpleDrawView``类中定义了一个列表 ``list<HBITMAP> SaveSeries``暂存所有的屏幕图像，当按下撤销快捷键时就调用该处理程序，取 ``SaveSeries``中最后一个图像绘制到工作区，并将其弹出即可。这里规定最大撤回步数为 _10_。<br />
+具体代码放在了 ``CTempSave.cpp``中，在 ``CSimpleDrawView.cpp``中包含其头文件即可调用其中函数。此外，增加了一个限制条件，__在"选择区域"模式下不会暂存图像__ 。
+### 保存与打开文件
+为保存文件，额外添加一个 ``CSaveHelper``类，具体保存的方式与实现选择功能时的类似，使用项目自带的保存函数即可将图像保存。该系统仅支持保存为 ``bmp``格式。打开文件时从文件中加载图像，再将其绘制到工作区即可，仅支持打开 ``bmp``文件。打开文件时设置 ``m_Shape``成员为 ``Shape::LImage``，避免绘制出多余图案。详见源代码。
+## 效果展示
+![](/picture/8.png)<br />
+#### 选择
+![](/picture/9.png)<br />
+#### 拖动
+![](/picture/10.png)<br />
+#### 修改大小
+![](/picture/11.png)<br />
+#### 保存
+![](/picture/12.png)<br />
+
+## 待完善的地方
+* 鼠标在移动过程中图形会不停闪烁（需要使用双缓冲技术解决）。
+* 文本框会遮盖住原本的图形，且其中文字不能修改大小。
+* 清除选框时会使原本处在选框边界的线条消失。
+* 尚未添加画正多边形的功能。
+* 填充功能目前只支持填充白色背景。
+* 代码存在较多冗余。
